@@ -3,6 +3,8 @@
 import { Card, Button } from "@nextui-org/react";
 import { useState, useEffect, useRef } from "react";
 import type Vditor from 'vditor';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Home() {
   const [vd, setVd] = useState<Vditor | null>(null);
@@ -32,10 +34,31 @@ export default function Home() {
     };
   }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (vd) {
       const content = vd.getValue();
-      console.log("Submitted:", { note: content });
+      try {
+        const response = await fetch('/api/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ note: content }),
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log("Submission successful:", result);
+          toast.success("提交成功！"); // 成功提示
+          vd.setValue(""); // 清空编辑器内容
+        } else {
+          console.error("Submission failed");
+          toast.error("提交失败，请重试。"); // 失败提示
+        }
+      } catch (error) {
+        console.error("Error submitting note:", error);
+        toast.error("提交出错，请稍后再试。"); // 错误提示
+      }
     }
   };
 
@@ -56,6 +79,7 @@ export default function Home() {
           </Button>
         </div>
       </Card>
+      <ToastContainer position="bottom-right" /> {/* 添加 Toast 容器 */}
     </div>
   );
 }
